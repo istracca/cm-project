@@ -35,6 +35,6 @@ function [Q, H] = lanczos(Q, H, A, n)
         w = w-Q(1:end, n-1) * H(n-1, n-1);
         % Normalization
         H(n, n-1) = norm(w);
-        Q(1:end, n) = w / norm(w);
+        Q(1:end, n) = w / H(n, n-1);
     end
 end

@@ -1,12 +1,14 @@
-function [x, flag, relative_residual, i, resvec] = custom_minres(A,y,eps,max_it)
-    resvec = zeros(1,max_it);
-    flag = 1;
-    Q = y / norm(y);
+function [x, flag, relative_residual, i, resvec] = custom_minres_preconditioned(A,y,eps,max_it,P)
+    preconditioned_A = P*A*P';
+    preconditioned_y = P*y;
+    resvec = [];
+    Q = preconditioned_y / norm(preconditioned_y);
     H = [];
+    flag = 1;
 
     for i=2:max_it
         % Expand Lanczos process
-        [Q, H] = lanczos(Q, H, A, i);
+        [Q, H] = lanczos(Q, H, preconditioned_A, i);
     
         % Calculate QR decomposition
         if i==2
@@ -19,22 +21,20 @@ function [x, flag, relative_residual, i, resvec] = custom_minres(A,y,eps,max_it)
         end
         % Solving the linear system
         c = zeros(i, 1);
-        c(1) = norm(y);
+        c(1) = norm(preconditioned_y);
         Q_h_c = (Q_h')*c;
         R_h0 = R_h(1:i-1,:);
         z = R_h0 \ Q_h_c(1:i-1);
     
         % Check for convergence
-        err = R_h0*z - Q_h_c(1:i-1);        % should be zero
-        err(i) = Q_h_c(i);
         z_ext = [z; 0];
-        x = A*Q*z_ext;
-           
+        preconditioned_x = Q*z_ext;
+        x = P'*preconditioned_x;
+        err = A*x - y;
         residual = norm(err);
-        resvec(i-1) = residual;
+        resvec = [resvec; residual];
         relative_residual = residual/norm(y);
         if relative_residual < eps
-            resvec = resvec(1:i-1);
             flag = 0;
             break;
         end

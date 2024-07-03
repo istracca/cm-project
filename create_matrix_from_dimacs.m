@@ -1,4 +1,4 @@
-function [A, b] = create_matrix_from_dimacs(file, seed)
+function [A, b, complement_eigenvalues, D_values, preconditioner] = create_matrix_from_dimacs(file, seed)
     graph = create_graph_from_dimacs(file);
     E = incidence_matrix(graph);
     
@@ -7,11 +7,15 @@ function [A, b] = create_matrix_from_dimacs(file, seed)
     E = E(1:n-1, :);
     
     rng(seed);
-    D = rand(m,1);
-    D = D + 4;
-    D = diag(D);
+    %D_values = rand(m,1);
+    %D_values = D_values + 100;
+    D_values = ones(m,1);
+    D = spdiags(D_values, 0, m, m);
     A = sparse([D E'; E zeros(size(E,1))]);
     b = costs_flows(graph);
+    schur_complement = -E*D^(-1)*E';
+    complement_eigenvalues = eig(schur_complement);
+    preconditioner = [D zeros(size(D,1), size(schur_complement,2)); zeros(size(schur_complement,1), size(D,2)) schur_complement];
 end
 
 function graph = create_graph_from_dimacs(file)
