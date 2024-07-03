@@ -15,7 +15,7 @@ function [A, b, complement_eigenvalues, D_values, preconditioner] = create_matri
     b = costs_flows(graph);
     schur_complement = -E*D^(-1)*E';
     complement_eigenvalues = eig(schur_complement);
-    preconditioner = [D zeros(size(D,1), size(schur_complement,2)); zeros(size(schur_complement,1), size(D,2)) schur_complement];
+    preconditioner = sparse([D zeros(size(D,1), size(schur_complement,2)); zeros(size(schur_complement,1), size(D,2)) schur_complement]);
 end
 
 function graph = create_graph_from_dimacs(file)

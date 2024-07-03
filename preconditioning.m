@@ -1,5 +1,5 @@
-exp_N_values = [8, 8, 8, 10, 10, 10, 12, 12, 12, 14, 14, 16];
-E_N_ratio_values = [8, 16, 32, 8, 32, 64, 8, 64, 256, 8, 64, 8];
+exp_N_values = [8, 8, 8, 10, 10, 10, 12, 12];
+E_N_ratio_values = [8, 16, 32, 8, 32, 64, 8, 64];
 number_of_instance = 3;
 
 % Array per salvare i risultati
@@ -28,7 +28,7 @@ for idx = 1:length(exp_N_values)
         
         % Calcola il numero di condizionamento della matrice A
         cond_nums(instance) = condest(A);
-        preconditioned_cond_numbers = condest(P*A*P');
+        preconditioned_cond_numbers(instance) = condest(P*A*P');
 
         % Custom MINRES preconditioned
         tic;
