@@ -5,6 +5,7 @@ number_of_instance = 3;
 % Array per salvare i risultati
 results = zeros(length(exp_N_values), 6); % 6 columns for mean values of the results
 condition_numbers = zeros(length(exp_N_values), 3); % 3 columns for condition numbers of each instance
+preconditioned_cond_numbers = zeros(length(exp_N_values), 3);
 
 for idx = 1:length(exp_N_values)
     exp_N = exp_N_values(idx);
@@ -19,6 +20,7 @@ for idx = 1:length(exp_N_values)
     custom_iters = zeros(1, number_of_instance);
 
     cond_nums = zeros(1, number_of_instance);
+    preconditioned_cond_numbers = zeros(1, number_of_instance);
 
     for instance = 1:number_of_instance
         file_path = sprintf('graph_instances/net%d_%d_%d.dmx', exp_N, E_N_ratio, instance);
@@ -26,10 +28,11 @@ for idx = 1:length(exp_N_values)
         
         % Calcola il numero di condizionamento della matrice A
         cond_nums(instance) = condest(A);
+        preconditioned_cond_numbers = condest(P*A*P');
 
         % Custom MINRES preconditioned
         tic;
-        [preconditioned_x, preconditioned_flag, preconditioned_relres, preconditioned_iter, preconditioned_resvec] = custom_minres_preconditioned(A, y, 1e-6, 200, P);
+        [preconditioned_x, preconditioned_flag, preconditioned_relres, preconditioned_iter, preconditioned_resvec] = custom_minres_preconditioned(A, y, 1e-6, size(y,1), P);
         preconditioned_relative_resvec = preconditioned_resvec / norm(y);
         preconditioned_times(instance) = toc;
         preconditioned_resvecs(instance) = preconditioned_relative_resvec(end);
@@ -37,7 +40,7 @@ for idx = 1:length(exp_N_values)
 
         % Custom MINRES
         tic;
-        [custom_x, custom_flag, custom_relres, custom_iter, custom_resvec] = custom_minres(A, y, 1e-6, 200);
+        [custom_x, custom_flag, custom_relres, custom_iter, custom_resvec] = custom_minres(A, y, 1e-6, size(y,1));
         custom_relative_resvec = custom_resvec / norm(y);
         custom_times(instance) = toc;
         custom_resvecs(instance) = custom_relative_resvec(end);
@@ -63,7 +66,8 @@ for idx = 1:length(exp_N_values)
     fprintf('Combinazione (%d, %d)\n', exp_N, E_N_ratio);
     fprintf('Preconditioned MINRES - Time: %.6f seconds, ResVec: %.6g, Iterations: %d\n', mean_preconditioned_time, mean_preconditioned_resvec, round(mean_preconditioned_iter));
     fprintf('Custom MINRES - Time: %.6f seconds, ResVec: %.6g, Iterations: %d\n', mean_custom_time, mean_custom_resvec, round(mean_custom_iter));
-    fprintf('Condition numbers: %.6g, %.6g, %.6g\n', cond_nums);
+    fprintf('Condition numbers: %.4g, %.4g, %.4g\n', cond_nums);
+    fprintf('Preconditioned conddtion numbers: %.4g, %.4g, %.4g\n', preconditioned_cond_numbers);
 end
 
 % Crea una tabella con i risultati
