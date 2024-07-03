@@ -37,7 +37,7 @@ for idx = 1:length(exp_N_values)
 
         % MATLAB MINRES
         tic;
-        [x, flag, relres, iter, resvec] = minres(A, y, 1e-6, size(y));
+        [x, flag, relres, iter, resvec] = minres(A, y, 1e-6, size(y,1));
         relative_resvec = resvec / norm(y);
         relative_resvec = relative_resvec(2:end);
         matlab_times(instance) = toc;
