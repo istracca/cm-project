@@ -1,4 +1,4 @@
-function [A, b, complement_eigenvalues, D_values, preconditioner] = create_matrix_from_dimacs(file, seed)
+function [D, E, b] = create_matrix_from_dimacs(file, seed)
     graph = create_graph_from_dimacs(file);
     E = incidence_matrix(graph);
     
@@ -7,15 +7,22 @@ function [A, b, complement_eigenvalues, D_values, preconditioner] = create_matri
     E = E(1:n-1, :);
     
     rng(seed);
-    %D_values = rand(m,1);
-    %D_values = D_values + 100;
-    D_values = ones(m,1);
+    % D_values = rand(m,1);
+    % D_values = D_values*19 + 1;
+    % D_values = ones(m,1);
+
+    half_m = floor(m / 2);
+        % Generate the two clusters of D_values
+    D_cluster1 = 0.95 + (0.1) * rand(half_m, 1);
+    D_cluster2 = 19.95 + (0.1) * rand(m - half_m, 1);
+
+    % Combine and shuffle the D_values
+    D_values = [D_cluster1; D_cluster2];
+    D_values = D_values(randperm(m));
+
+
     D = spdiags(D_values, 0, m, m);
-    A = sparse([D E'; E zeros(size(E,1))]);
     b = costs_flows(graph);
-    schur_complement = -E*D^(-1)*E';
-    complement_eigenvalues = eig(schur_complement);
-    preconditioner = sparse([D zeros(size(D,1), size(schur_complement,2)); zeros(size(schur_complement,1), size(D,2)) schur_complement]);
 end
 
 function graph = create_graph_from_dimacs(file)

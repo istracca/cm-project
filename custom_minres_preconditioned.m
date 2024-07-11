@@ -1,7 +1,8 @@
-function [x, flag, relative_residual, i, resvec] = custom_minres_preconditioned(A,y,eps,max_it,P)
-    preconditioned_A = P*A*P';
-    preconditioned_y = P*y;
-    resvec = [];
+function [x, flag, relative_residual, i, resvec] = custom_minres_preconditioned(A,y,eps,max_it,R)
+    R_inverse = (R)^(-1);
+    preconditioned_A = (R_inverse'*A*R_inverse);
+    preconditioned_y = R_inverse'*y;
+    resvec = zeros(1,max_it);
     Q = preconditioned_y / norm(preconditioned_y);
     H = [];
     flag = 1;
@@ -29,12 +30,13 @@ function [x, flag, relative_residual, i, resvec] = custom_minres_preconditioned(
         % Check for convergence
         z_ext = [z; 0];
         preconditioned_x = Q*z_ext;
-        x = P'*preconditioned_x;
+        x = R_inverse*preconditioned_x;
         err = A*x - y;
         residual = norm(err);
-        resvec = [resvec; residual];
+        resvec(i-1) = residual;
         relative_residual = residual/norm(y);
         if relative_residual < eps
+            resvec = resvec(1:i-1);
             flag = 0;
             break;
         end

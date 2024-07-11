@@ -1,5 +1,6 @@
-exp_N_values = [8];
-E_N_ratio_values = [8];
+exp_N_values = [8, 8, 8, 10, 10, 10];
+E_N_ratio_values = [8, 16, 32, 8, 32, 64];
+preconditioning_ratios = [0,0.01,0.05,0.1];
 number_of_instance = 3;
 warning('off', 'all');
 
@@ -17,21 +18,11 @@ for idx = 1:length(exp_N_values)
     n = 2^exp_N;
     m = n*E_N_ratio;
 
-    custom_times = zeros(1, number_of_instance);
-    custom_resvecs = zeros(1, number_of_instance);
-    custom_iters = zeros(1, number_of_instance);
-
-    preconditioned_times = zeros(1, number_of_instance);
-    preconditioned_resvecs = zeros(1, number_of_instance);
-    preconditioned_iters = zeros(1, number_of_instance);
-
-    sparse_preconditioned_times = zeros(1, number_of_instance);
-    sparse_preconditioned_resvecs = zeros(1, number_of_instance);
-    sparse_preconditioned_iters = zeros(1, number_of_instance);
-
-    cond_nums = zeros(1, number_of_instance);
-    preconditioned_cond_nums = zeros(1, number_of_instance);
-    sparse_preconditioned_cond_nums = zeros(1, number_of_instance);
+    for j = 1:klength(preconditioning_ratios)
+        times(j) = zeros(1, number_of_instance);
+        resvecs(j) = zeros(1, number_of_instance);
+        iters(j) = zeros(1, number_of_instance);
+        cond_nums(j) = zeros(1,number_of_instance);
 
     for instance = 1:number_of_instance
         file_path = sprintf('graph_instances/net%d_%d_%d.dmx', exp_N, E_N_ratio, instance);
@@ -44,20 +35,18 @@ for idx = 1:length(exp_N_values)
         M = sparse([sqrt(D) zeros(m,(n-1)); zeros((n-1),m) M_schur]);
         R = sparse(M*L');
 
-        % off_diag = tril(ones(size(schur_component))) - eye(n-1);
-        % off_diag_elements = schur_component .* off_diag;
-        % off_diag_elements(abs(off_diag_elements) > 1) = 0;
-        % schur_component_trimmed = schur_component - off_diag_elements;
-        schur_component_trimmed = trim_schur_component(schur_component,1e-5,0);
-        [sparse_L_schur, sparse_M_schur] = ldl(schur_component_trimmed);
-        sparse_L = sparse([spdiags(ones(m,1),0,m,m) zeros(m,(n-1)); zeros((n-1),m) sparse_L_schur]);
-        sparse_M = sparse([sqrt(D) zeros(m,(n-1)); zeros((n-1),m) sparse_M_schur]);
-        sparse_R = sparse(sparse_M*sparse_L');
+
+        for j=1:length(preconditioning_ratios)
+            schur_component_trimmed(j) = trim_schur_component(schur_component,1e-5,preconditioning_ratios(j)*(n-1)*(n-1));
+            [sparse_L_schur(j), sparse_M_schur(j)] = ldl(schur_component_trimmed(j));
+            sparse_L(j) = sparse([spdiags(ones(m,1),0,m,m) zeros(m,(n-1)); zeros((n-1),m) sparse_L_schur(j)]);
+            sparse_M(j) = sparse([sqrt(D) zeros(m,(n-1)); zeros((n-1),m) sparse_M_schur(j)]);
+            sparse_R(j) = sparse(sparse_M(j)*sparse_L(j)');
         
-        % Calcola il numero di condizionamento della matrice A
-        cond_nums(instance) = condest(A);
-        preconditioned_cond_nums(instance) = condest((R')^(-1)*A*R^(-1));
-        sparse_preconditioned_cond_nums(instance) = condest((sparse_R')^(-1)*A*sparse_R^(-1));
+            % Calcola il numero di condizionamento della matrice A
+            cond_nums(j)(instance) = condest(A);
+            preconditioned_cond_nums(instance) = condest((R')^(-1)*A*R^(-1));
+            sparse_preconditioned_cond_nums(instance) = condest((sparse_R')^(-1)*A*sparse_R^(-1));
 
         % Custom MINRES
         tic;
@@ -121,54 +110,43 @@ end
 fprintf('Prima tabella\n%s\n', first_table);
 fprintf('Seconda tabella\n%s\n', second_table);
 
-figure;
-semilogy(custom_relative_resvec, 'r', 'LineWidth', 1.5);
-hold on;
-semilogy(preconditioned_relative_resvec, 'b', 'LineWidth', 1.5);
-hold on;
-semilogy(sparse_preconditioned_relative_resvec, 'g', 'LineWidth', 1.5);
-hold off;
-
-xlabel('Iterations');
-ylabel('Relative Residual');
-legend('Custom MINRES', 'Preconditioned custom MINRES', 'Sparse Preconditioned custom MINRES');
-title(sprintf('Evolution of relative residuals for N=%d, E=%d', 2^exp_N, E_N_ratio*2^exp_N));
-grid on;
-
-% Calcolo degli autovalori
-eigenvalues = real(eigs(A,2303));
-
-% Separiamo gli autovalori in positivi e negativi
-positive_eigenvalues = eigenvalues(eigenvalues > 0);
-negative_eigenvalues = eigenvalues(eigenvalues < 0);
-
-positive_sorted_eigenvalues = sort(positive_eigenvalues);
-negative_sorted_eigenvalues = sort(-negative_eigenvalues);
-
-% Crea una figura per il grafico degli autovalori positivi
-figure;
-
-% Plotta la stima della densità di kernel per gli autovalori positivi
-subplot(2, 1, 1);
-semilogy(positive_sorted_eigenvalues, 'b-', 'LineWidth', 2); % Plotta gli autovalori come linea continua bluxlabel('Eigenvalues (Positive)');
-ylabel('Positive eigenvalues');
-title('Distribution of Positive Eigenvalues');
-set(gca, 'XScale', 'log'); % Imposta l'asse x su scala logaritmica
-grid on;
-
-% Crea una figura per il grafico degli autovalori negativi
-subplot(2, 1, 2);
-semilogy(negative_sorted_eigenvalues, 'b-', 'LineWidth', 2); % Plotta gli autovalori come linea continua bluxlabel('Eigenvalues (Positive)');
-ylabel('Abs(Negative eigenvalues)');
-title('Distribution of Negative Eigenvalues');
-set(gca, 'XScale', 'log'); % Imposta l'asse x su scala logaritmica
-grid on;
-
-% Aggiunge un titolo generale alla figura
-sgtitle('Eigenvalues of A');
-
-
+% Plot dell'evoluzione dei residui relativi per l'ultima combinazione
+% figure;
+% semilogy(custom_relative_resvec, 'r', 'LineWidth', 1.5);
+% hold on;
+% semilogy(preconditioned_relative_resvec, 'b', 'LineWidth', 1.5);
+% hold on;
+% semilogy(sparse_preconditioned_relative_resvec, 'g', 'LineWidth', 1.5);
+% hold off;
 % 
+% xlabel('Iterazioni');
+% ylabel('Relative Residual');
+% legend('Custom MINRES', 'Preconditioned custom MINRES', 'Sparse Preconditioned custom MINRES');
+% title(sprintf('Evolution of relative residuals for N=%d, E=%d', 2^exp_N, E_N_ratio*2^exp_N));
+% grid on;
+
+% eigenvalues=real(eigs((R')^(-1)*A*R^(-1),2303));
+% 
+% % Calcola la stima della densità di kernel
+% [f, xi] = ksdensity(eigenvalues);
+
+% % Crea una figura per il grafico
+% figure;
+% 
+% % Plotta la stima della densità di kernel
+% plot(xi, f, 'LineWidth', 2);
+% 
+% % Aggiungi etichette agli assi e un titolo
+% xlabel('Autovalori');
+% ylabel('Densità');
+% title('Distribuzione degli Autovalori (Scala Logaritmica)');
+% 
+% % Imposta l'asse x su scala logaritmica
+% set(gca, 'XScale', 'log');
+% 
+% % Aggiungi una griglia al grafico
+% grid on;
+
 % kurt = kurtosis(eigenvalues);
 % 
 % % Visualizza il risultato
