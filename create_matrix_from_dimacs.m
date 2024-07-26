@@ -1,5 +1,9 @@
+% Ha senso dividere e fare un file per ogni funzione
+
 function [D, E, b] = create_matrix_from_dimacs(file, seed)
+    % Ottieni il grafico dal file
     graph = create_graph_from_dimacs(file);
+    % Ottieni la matrice di incidenza (completa) dal grafico
     E = incidence_matrix(graph);
     
     m = size(E, 2);
@@ -7,21 +11,27 @@ function [D, E, b] = create_matrix_from_dimacs(file, seed)
     E = E(1:n-1, :);
     
     rng(seed);
-    % D_values = rand(m,1);
-    % D_values = D_values*19 + 1;
+
+    % decommenta questa parte per generare D di tutti uni
     % D_values = ones(m,1);
 
+    % decommenta questa parte per elementi di D in [0,1]
+    % D_values = rand(m,1);
+    % D_values = D_values*19 + 1;
+    
+
+    % decommenta questa parte per elementi di D in cluster [0.95,1.05] e
+    % [19.95,20.05
     half_m = floor(m / 2);
-        % Generate the two clusters of D_values
     D_cluster1 = 0.95 + (0.1) * rand(half_m, 1);
     D_cluster2 = 19.95 + (0.1) * rand(m - half_m, 1);
-
-    % Combine and shuffle the D_values
     D_values = [D_cluster1; D_cluster2];
     D_values = D_values(randperm(m));
 
-
+    % Costruisci D partendo da D_values
     D = spdiags(D_values, 0, m, m);
+    % Ottieni b come concatenazione di costi degli archi e flussi dei nodi
+    % del grafo
     b = costs_flows(graph);
 end
 

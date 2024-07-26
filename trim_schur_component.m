@@ -1,3 +1,8 @@
+% Questa funzione elimina dalla matrice schur_component tutti gli elementi
+% diagonali tranne i k più grandi in modulo. I valori non diagonali che
+% sono sotto la soglia "threshold" (in valore assoluto) vengono comunque
+% eliminati
+
 function schur_component_trimmed = trim_schur_component(schur_component, threshold, k)
     % Dimensioni della matrice
     m = size(schur_component,1);

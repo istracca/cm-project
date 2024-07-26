@@ -1,3 +1,7 @@
+% Implementazione del nostro minres. Nella scelta dei parametri di input e
+% di output ci siamo ispirati al minres di matlab
+
+
 function [x, flag, relative_residual, i, resvec] = custom_minres(A,y,eps,max_it)
     resvec = zeros(1,max_it);
     flag = 1;
@@ -28,7 +32,6 @@ function [x, flag, relative_residual, i, resvec] = custom_minres(A,y,eps,max_it)
         err = R_h0*z - Q_h_c(1:i-1);        % should be zero
         err(i) = Q_h_c(i);
         z_ext = [z; 0];
-        x = A*Q*z_ext;
            
         residual = norm(err);
         resvec(i-1) = residual;
@@ -39,5 +42,5 @@ function [x, flag, relative_residual, i, resvec] = custom_minres(A,y,eps,max_it)
             break;
         end
     end
-    
+    x = A*Q*z_ext;
 end

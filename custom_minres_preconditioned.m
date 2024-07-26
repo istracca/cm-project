@@ -1,3 +1,14 @@
+% Implementazione della versione precondizionata del minres. I parametri di
+% input e di output sono gli stessi della versione senza preconditioner,
+% fatta eccezione per il parametro R che rappresenta la matrice da usare
+% per precondizionare il sistema lineare.
+% l'errore relativo per controllare la convergenza viene calcolato sul
+% sistema originale, e non su quello precondizionato, in modo da poter
+% confrontare effettivamente le prestazioni della versione precondizionata
+% cone quelle della versione non precondizionata
+
+
+
 function [x, flag, relative_residual, i, resvec] = custom_minres_preconditioned(A,y,eps,max_it,R)
     R_inverse = (R)^(-1);
     preconditioned_A = (R_inverse'*A*R_inverse);
