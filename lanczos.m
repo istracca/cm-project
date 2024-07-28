@@ -1,3 +1,4 @@
+function [Q, H] = lanczos(Q, H, A, n)
 % Function that implements Lanczos algorithm
 % Input parameters:
 % - Q: Orthogonal matrix whose columns form the basis of the Krylov 
@@ -10,7 +11,7 @@
 %      expanded Krylov subspace (dimension n) including the latest vector.
 % - H: Updated tridiagonal matrix reflecting the orthogonal projection of
 %      matrix A onto the new basis represented by Q (dimensions nx(n-1))
-function [Q, H] = lanczos(Q, H, A, n)
+
     % First iteration is different from the following
     if n==2
         % Projection

@@ -1,3 +1,4 @@
+function [Q,R] = qr_iterative(H, Q, R, n)
 % Function that implements Givens rotations to obtain QR decomposizion of H 
 % Input parameters:
 % - H: The new tridiagonal matrix (dimensions nx(n-1)) that is being
@@ -13,7 +14,7 @@
 %       decomposition of the new H
 % - R: The upper triangular matrix (dimensions (nx(n-1)) that is part of
 %       the QR decopmosition of the new H 
-function [Q,R] = qr_iterative(H, Q, R, n)
+
     % Additional row and column for Q
     Q(n,n) = 1;
     
